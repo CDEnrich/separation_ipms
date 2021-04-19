@@ -10,8 +10,10 @@ import scipy.special as ss
 import scipy.stats as sst
     
 def get_nu_samples(args, second_dataset=False):
-    fname = os.path.join('nu_samples',
-                         f'nu_samples_{args.d}_{args.k}_{args.n_samples}_{args.seed}.pkl')
+    if not second_dataset:
+        fname = os.path.join('nu_samples', f'nu_samples_{args.d}_{args.k}_{args.n_samples}_{args.seed}.pkl')
+    if second_dataset:
+        fname = os.path.join('nu_samples', f'nu_samples_2_{args.d}_{args.k}_{args.n_samples}_{args.seed}.pkl')
     if os.path.exists(fname):
         X = pickle.load(open(fname, 'rb'))
         return X
@@ -35,6 +37,7 @@ def get_nu_samples(args, second_dataset=False):
             accepted_rows_tensor = torch.tensor(accepted_rows).unsqueeze(1).expand([len(accepted_rows),args.d])
             if j==0:
                 X = torch.gather(X0, 0, accepted_rows_tensor)
+                print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {X.shape[0]} more samples.')
             else:
                 samples = torch.gather(X0, 0, accepted_rows_tensor)
                 X = torch.cat((X,samples),0)
@@ -55,6 +58,7 @@ def get_mu_samples(args):
         legendre_k_d = q_k_d/q_k_d(1)
         torch.manual_seed(args.seed)
         for j in range(args.n_samples//1000000):
+            start = time.time()
             X0 = torch.randn(1000000,args.d)
             X0 = torch.nn.functional.normalize(X0, p=2, dim=1)
             acceptance_prob = torch.nn.functional.relu(torch.from_numpy(-0.99*legendre_k_d(X0[:,args.d-1])))
@@ -66,6 +70,7 @@ def get_mu_samples(args):
             accepted_rows_tensor = torch.tensor(accepted_rows).unsqueeze(1).expand([len(accepted_rows),args.d])
             if j==0:
                 X = torch.gather(X0, 0, accepted_rows_tensor)
+                print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {X.shape[0]} more samples.')
             else:
                 samples = torch.gather(X0, 0, accepted_rows_tensor)
                 X = torch.cat((X,samples),0)
@@ -74,6 +79,19 @@ def get_mu_samples(args):
             os.makedirs('mu_samples')
         pickle.dump(X, open(fname, 'wb'))
         return X
+
+def set_args_for_task_id(args, task_id):
+    grid = {
+        'd': [6, 8, 10, 12, 14, 16],
+        'seed': [42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
+    }
+    from itertools import product
+    gridlist = list(dict(zip(grid.keys(), vals)) for vals in product(*grid.values()))
+    print(f'task {task_id} out of {len(gridlist)}')
+    assert task_id >= 1 and task_id <= len(gridlist), 'wrong task_id!'
+    elem = gridlist[task_id - 1]
+    for k, v in elem.items():
+        setattr(args, k, v)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='F1/F2 IPM separation in sphere')
@@ -90,9 +108,13 @@ if __name__ == '__main__':
     parser.add_argument('--b', type=float, default=0.0, help='parameter of the activation function')
     parser.add_argument('--interactive', action='store_true', help='interactive, i.e. do not save results')
     parser.add_argument('--theoretical_f2', action='store_true', help='compute f2 distance with exact kernel too')
-    
+    parser.add_argument('--task_id', type=int, default=None, help='task id for sweep jobs')
+
     args = parser.parse_args()
     
+    if args.task_id is not None:
+        set_args_for_task_id(args, args.task_id)
+
     def d_f1_estimate(X_nu, X_mu, args):
         gen_moment_nu_positive = args.a*torch.mean(torch.nn.functional.relu(X_nu[:,args.d-1])) + \
         args.b*torch.mean(torch.nn.functional.relu(-X_nu[:,args.d-1]))
@@ -204,6 +226,7 @@ if __name__ == '__main__':
                 'd_f2_nu': d_f2_nu,
                 'ratio': (d_f1+d_f1_t)/(2*d_f2),
                 'sqrt(N_kd)': np.sqrt(N_kd),
+                'effective_n_samples': min_num,
             }
         else:
             res = {
@@ -214,11 +237,12 @@ if __name__ == '__main__':
                 'd_f2_nu': d_f2_nu,
                 'ratio': (d_f1+d_f1_t)/(2*d_f2),
                 'sqrt(N_kd)': np.sqrt(N_kd),
+                'effective_n_samples': min_num,
             }
         if not args.interactive:
             pickle.dump(res, open(fname, 'wb'))
     
-    if not args.use_grid:
+    if args.task_id is not None or args.use_grid is not None:
         resdir = os.path.join('res', args.name)
         if not os.path.exists(resdir):
             os.makedirs(resdir)
@@ -227,7 +251,7 @@ if __name__ == '__main__':
         if os.path.exists(fname) and not args.interactive:
             print('results file already exists, skipping')
             sys.exit(0)
-        compute_distances(args)
+        compute_distances(args, fname)
     else:
         d_vec = [6,8,10,12,14,16]
         resdir = os.path.join('res', args.name)

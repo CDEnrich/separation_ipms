@@ -9,6 +9,19 @@ import torch.nn as nn
 import scipy.special as ss
 import scipy.stats as sst
 
+def set_args_for_task_id(args, task_id):
+    grid = {
+        'd': [6, 8, 10, 12, 14, 16],
+        'seed': [42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
+    }
+    from itertools import product
+    gridlist = list(dict(zip(grid.keys(), vals)) for vals in product(*grid.values()))
+    print(f'task {task_id} out of {len(gridlist)}')
+    assert task_id >= 1 and task_id <= len(gridlist), 'wrong task_id!'
+    elem = gridlist[task_id - 1]
+    for k, v in elem.items():
+        setattr(args, k, v)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='F1/F2 and sliced Wasserstein in Euclidean space')
     parser.add_argument('--name', default='f1_f2_sliced_w', help='experiment name')
@@ -23,9 +36,13 @@ if __name__ == '__main__':
     parser.add_argument('--large_var', type=float, default=1, help='large variance')
     parser.add_argument('--small_var', type=float, default=0.1, help='small variance')
     parser.add_argument('--interactive', action='store_true', help='interactive, i.e. do not save results')
-    
+    parser.add_argument('--task_id', type=int, default=None, help='task id for sweep jobs')
+
     args = parser.parse_args()
     
+    if args.task_id is not None:
+        set_args_for_task_id(args, args.task_id)
+
     def max_sliced(X_nu, X_mu, args):
         return sst.wasserstein_distance(X_mu[:,args.d-1], X_nu[:,args.d-1])
 
@@ -148,7 +165,7 @@ if __name__ == '__main__':
         if not args.interactive:
             pickle.dump(res, open(fname, 'wb'))
     
-    if not args.use_grid:
+    if args.task_id is not None or args.use_grid is not None:
         resdir = os.path.join('res', args.name)
         if not os.path.exists(resdir):
             os.makedirs(resdir)

@@ -22,7 +22,20 @@ def get_mu_samples_sd(args):
         if not os.path.exists('mu_samples_sd'):
             os.makedirs('mu_samples_sd')
         pickle.dump(X, open(fname, 'wb'))
-        return X
+    return X
+
+def set_args_for_task_id(args, task_id):
+    grid = {
+        'd': [6, 8, 10, 12, 14, 16],
+        'seed': [42, 43, 44, 45, 46, 47, 48, 49, 50, 51],                                                      
+    }
+    from itertools import product
+    gridlist = list(dict(zip(grid.keys(), vals)) for vals in product(*grid.values()))                          
+    print(f'task {task_id} out of {len(gridlist)}')
+    assert task_id >= 1 and task_id <= len(gridlist), 'wrong task_id!'                                         
+    elem = gridlist[task_id - 1]
+    for k, v in elem.items():
+        setattr(args, k, v)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='F1/F2 SD separation in sphere')
@@ -39,8 +52,12 @@ if __name__ == '__main__':
     parser.add_argument('--b', type=float, default=0.0, help='parameter of the activation function')
     parser.add_argument('--interactive', action='store_true', help='interactive, i.e. do not save results')
     parser.add_argument('--no_sd_f2', action='store_true', help='do not compute sd_f2')
-    
+    parser.add_argument('--task_id', type=int, default=None, help='task id for sweep jobs')
+
     args = parser.parse_args()
+
+    if args.task_id is not None:
+        set_args_for_task_id(args, args.task_id)
     
     def sd_f1_estimate_theoretical(args):
         if (args.k%2 != (args.alpha+1)%2) and (args.k > args.alpha + 2):
@@ -166,7 +183,7 @@ if __name__ == '__main__':
         if not args.interactive:
             pickle.dump(res, open(fname, 'wb'))
         
-    if not args.use_grid:
+    if args.task_id is not None or args.use_grid is not None:
         resdir = os.path.join('res', args.name)
         if not os.path.exists(resdir):
             os.makedirs(resdir)
