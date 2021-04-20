@@ -38,7 +38,7 @@ def get_nu_samples(args, second_dataset=False):
             if j==0:
                 X = torch.gather(X0, 0, accepted_rows_tensor)
                 print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {X.shape[0]} more samples.')
-            else:
+            elif X.shape(0) < args.effective_n_samples:
                 samples = torch.gather(X0, 0, accepted_rows_tensor)
                 X = torch.cat((X,samples),0)
                 print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {samples.shape[0]} more samples.')
@@ -71,7 +71,7 @@ def get_mu_samples(args):
             if j==0:
                 X = torch.gather(X0, 0, accepted_rows_tensor)
                 print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {X.shape[0]} more samples.')
-            else:
+            elif X.shape(0) < args.effective_n_samples:
                 samples = torch.gather(X0, 0, accepted_rows_tensor)
                 X = torch.cat((X,samples),0)
                 print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {samples.shape[0]} more samples.')
@@ -109,6 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('--interactive', action='store_true', help='interactive, i.e. do not save results')
     parser.add_argument('--theoretical_f2', action='store_true', help='compute f2 distance with exact kernel too')
     parser.add_argument('--task_id', type=int, default=None, help='task id for sweep jobs')
+    parser.add_argument('--effective_n_samples', type=int, default=300000, help='number of samples')
 
     args = parser.parse_args()
     
@@ -182,7 +183,7 @@ if __name__ == '__main__':
         start = time.time()
         X_mu = get_mu_samples(args)
         print(f'X_mu samples done. Duration={time.time()-start}')
-        min_num = np.min([X_nu.shape[0],X_nu_2.shape[0],X_mu.shape[0]])
+        min_num = np.min([X_nu.shape[0],X_nu_2.shape[0],X_mu.shape[0],args.effective_n_samples])
         X_nu = X_nu[:(min_num),:]
         X_nu_2 = X_nu_2[:(min_num),:]
         X_mu = X_mu[:(min_num),:]

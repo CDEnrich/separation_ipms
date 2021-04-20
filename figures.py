@@ -5,6 +5,7 @@ import glob
 import numpy as np
 import os
 import pickle
+import torch
 import matplotlib.pyplot as plt
 
 plt.style.use('ggplot')
@@ -281,7 +282,7 @@ def values_f1_f2_sliced_w(args):
     for dimension in args.d_vec:
         args.d = dimension
         resdir = os.path.join('res', args.name)
-        nname = os.path.join(resdir,f'{args.name}_{args.d}_{args.n_samples}_{args.n_feature_samples}_*_{args.alpha}_{args.large_var}_{args.small_var}.pkl')
+        name = os.path.join(resdir,f'{args.name}_{args.d}_{args.n_samples}_{args.n_feature_samples}_*_{args.alpha}_{args.large_var}_{args.small_var}.pkl')
         fnames = glob.glob(name)
         d_f1_list = []
         d_f2_list = []
@@ -290,22 +291,22 @@ def values_f1_f2_sliced_w(args):
         avg_sliced_list = []
         d_f1_nu_list = []
         d_f2_nu_list = []
-        d_f2_nu_list = []
+        d_tildef2_nu_list = []
         max_sliced_nu_list = []
         avg_sliced_nu_list = []
         assert len(fnames) > 0, 'no files! ({})'.format(name)
         for fname in fnames:
             res = pickle.load(open(fname, 'rb'))
-            d_f1_list.append()
-            d_f2_list.append()
-            d_tildef2_list.append()
-            max_sliced_list.append()
-            avg_sliced_list.append()
-            d_f1_nu_list.append()
-            d_f2_nu_list.append()
-            d_f2_nu_list.append()
-            max_sliced_nu_list.append()
-            avg_sliced_nu_list.append()
+            d_f1_list.append(res['d_f1'])
+            d_f2_list.append(res['d_f2'])
+            d_tildef2_list.append(res['d_tildef2'])
+            max_sliced_list.append(res['max_sliced'])
+            avg_sliced_list.append(res['avg_sliced'])
+            d_f1_nu_list.append(res['d_f1_nu'])
+            d_f2_nu_list.append(res['d_f2_nu'])
+            d_tildef2_nu_list.append(res['d_tildef2_nu'])
+            max_sliced_nu_list.append(res['max_sliced_nu'])
+            avg_sliced_nu_list.append(res['avg_sliced_nu'])
         d_f1_list = torch.tensor(d_f1_list)
         d_f2_list = torch.tensor(d_f2_list)
         d_tildef2_list = torch.tensor(d_tildef2_list)
@@ -313,9 +314,9 @@ def values_f1_f2_sliced_w(args):
         avg_sliced_list = torch.tensor(avg_sliced_list)
         d_f1_nu_list = torch.tensor(d_f1_nu_list)
         d_f2_nu_list = torch.tensor(d_f2_nu_list)
-        d_f2_nu_list = torch.tensor(d_f2_nu_list)
-        max_sliced_nu_list = torch.tensor(d_f2_list)
-        avg_sliced_nu_list = torch.tensor(d_f2_list)
+        d_tildef2_nu_list = torch.tensor(d_tildef2_nu_list)
+        max_sliced_nu_list = torch.tensor(max_sliced_nu_list)
+        avg_sliced_nu_list = torch.tensor(avg_sliced_nu_list)
         
         d_f1_avg.append(float(torch.mean(d_f1_list)))
         d_f2_avg.append(float(torch.mean(d_f2_list)))
@@ -401,7 +402,7 @@ def fig_1_f1_f2_sliced_w(args, results):
     
     plt.semilogy(d_axis, d_f1_avg, label='$F_1$ IPM')
     plt.semilogy(d_axis, d_f2_avg, label='$F_2$ IPM')
-    plt.semilogy(d_axis, d_tildef2_avg, label='$\tilde{F}_2$ IPM')
+    plt.semilogy(d_axis, d_tildef2_avg, label='$tilde{F}_2$ IPM')
     plt.semilogy(d_axis, max_sliced_avg, label='Max-sliced W.')
     plt.semilogy(d_axis, avg_sliced_avg, label='Sliced W.')
     plt.fill_between(d_axis, d_f1_min, d_f1_max, alpha=.3)
@@ -434,7 +435,7 @@ def fig_2_f1_f2_sliced_w(args, results):
     
     plt.semilogy(d_axis, d_f1_nu_avg, label='$F_1$ IPM')
     plt.semilogy(d_axis, d_f2_nu_avg, label='$F_2$ IPM')
-    plt.semilogy(d_axis, d_tildef2_nu_avg, label='$\tilde{F}_2$ IPM')
+    plt.semilogy(d_axis, d_tildef2_nu_avg, label='$tilde{F}_2$ IPM')
     plt.semilogy(d_axis, max_sliced_nu_avg, label='Max-sliced W.')
     plt.semilogy(d_axis, avg_sliced_nu_avg, label='Sliced W.')
     plt.fill_between(d_axis, d_f1_nu_min, d_f1_nu_max, alpha=.3)
@@ -448,27 +449,27 @@ def fig_2_f1_f2_sliced_w(args, results):
     plt.legend()
     
 if __name__ == '__main__':
-    '''
+    
     args = empty_class()
     args.name = 'f1_f2_ipm'
     args.d_vec = [6,8,10,12,14,16]
     args.k = 6
     args.n_feature_samples = 10000
-    args.n_samples = 500000000
+    args.n_samples = 50000000
     args.alpha = 1
     args.gamma = 0.5
     args.a = 1.0
     args.b = 0.0
     results = values_f1_f2_sep(args)
     plt.figure(figsize=(4,3))
-    fig_1_f1_f2_sep(args)
+    fig_1_f1_f2_sep(args, results)
     plt.title(f'$F_1$ and $F_2$ IPM estimates ($k = {args.k}$)')
-    plt.savefig(f'figures/f1_f2_ipm_fig1_{args.k}_{args.n_samples}', bbox_inches='tight', pad_inches=0)
+    plt.savefig(f'figures/f1_f2_ipm_fig1_{args.k}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
     plt.figure(figsize=(4,3))
-    fig_2_f1_f2_sep(args)
+    fig_2_f1_f2_sep(args, results)
     plt.title(f'Ratios between $F_1$ and $F_2$ IPM estimates ($k = {args.k}$)')
-    plt.savefig(f'figures/f1_f2_ipm_fig2_{args.k}_{args.n_samples}', bbox_inches='tight', pad_inches=0)
-    '''
+    plt.savefig(f'figures/f1_f2_ipm_fig2_{args.k}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
+    
     args = empty_class()
     args.name = 'f1_f2_sd'
     args.d_vec = [6,8,10,12,14,16]
@@ -481,32 +482,30 @@ if __name__ == '__main__':
     args.b = 0.0
     results = values_f1_f2_sd(args)
     plt.figure(figsize=(4,3))
-    fig_1_f1_f2_sd(args)
+    fig_1_f1_f2_sd(args, results)
     plt.title(f'$F_1$ and $F_2$ SD estimates ($k = {args.k}$)')
-    plt.savefig(f'figures/f1_f2_sd_fig1_{args.k}_{args.n_samples}', bbox_inches='tight', pad_inches=0)
+    plt.savefig(f'figures/f1_f2_sd_fig1_{args.k}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
     plt.figure(figsize=(4,3))
-    fig_2_f1_f2_sd(args)
+    fig_2_f1_f2_sd(args, results)
     plt.title(f'Ratios between $F_1$ and $F_2$ SD estimates ($k = {args.k}$)')
-    plt.savefig(f'figures/f1_f2_sd_fig2_{args.k}_{args.n_samples}', bbox_inches='tight', pad_inches=0)
-    '''
+    plt.savefig(f'figures/f1_f2_sd_fig2_{args.k}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
+
     args = empty_class()
     args.name = 'f1_f2_sliced_w'
     args.d_vec = [6,8,10,12,14,16]
     args.n_feature_samples = 10000
-    args.n_samples = 500000
+    args.n_samples = 100000
     args.alpha = 1
-    args.large_var = 1.0
+    args.large_var = 1
     args.small_var = 0.1
     args.a = 1.0
     args.b = 0.0
     results = values_f1_f2_sliced_w(args)
     plt.figure(figsize=(4,3))
-    fig_1_f1_f2_sliced_w(args)
+    fig_1_f1_f2_sliced_w(args, results)
     plt.title(f'$F_1$ and $F_2$ IPM, sliced and max-sliced Wasserstein')
-    plt.savefig(f'figures/f1_f2_sliced_w_fig1_{args.k}_{args.n_samples}', bbox_inches='tight', pad_inches=0)
+    plt.savefig(f'figures/f1_f2_sliced_w_fig1_{args.large_var}_{args.small_var}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
     plt.figure(figsize=(4,3))
-    fig_2_f1_f2_sliced_w(args)
+    fig_2_f1_f2_sliced_w(args, results)
     plt.title(f'$F_1$ and $F_2$ IPM, sliced and max-sliced Wasserstein (baseline)')
-    plt.savefig(f'figures/f1_f2_sliced_w_fig2_{args.k}_{args.n_samples}', bbox_inches='tight', pad_inches=0)
-    
-
+    plt.savefig(f'figures/f1_f2_sliced_w_fig2_{args.large_var}_{args.small_var}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
