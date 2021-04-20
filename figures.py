@@ -7,6 +7,8 @@ import os
 import pickle
 import matplotlib.pyplot as plt
 
+plt.style.use('ggplot')
+
 class empty_class:
     pass
 
@@ -125,6 +127,10 @@ def fig_1_f1_f2_sep(args, results):
     plt.fill_between(d_axis, d_f1_t_min, d_f1_t_max, alpha=.3)
     plt.fill_between(d_axis, d_f2_min, d_f2_max, alpha=.3)
     
+    plt.ylabel('IPMs')
+    plt.xlabel('Dimension d')
+    plt.legend()
+    
 def fig_2_f1_f2_sep(args, results):
     d_axis = np.array(args.d_vec)
     ratio = np.array(results['ratio'])
@@ -132,9 +138,13 @@ def fig_2_f1_f2_sep(args, results):
     ratio_min = np.array(results['ratio_min'])
     sqrt_N_kd_list = np.array(results['sqrt_N_kd_list'])
     
-    plt.semilogy(d_axis, ratio, label='$F_1$ IPM')
-    plt.semilogy(d_axis, sqrt_N_kd_list, label='$F_1$ IPM (theory)')
+    plt.semilogy(d_axis, ratio, label='Ratio $F_1$ IPM/$F_2$ IPM')
+    plt.semilogy(d_axis, sqrt_N_kd_list, label='Ratio (theory)')
     plt.fill_between(d_axis, ratio_min, ratio_max, alpha=.3)
+    
+    plt.ylabel('Ratios')
+    plt.xlabel('Dimension d')
+    plt.legend()
     
 def values_f1_f2_sd(args):
     sd_f1_avg = []
@@ -218,6 +228,10 @@ def fig_1_f1_f2_sd(args, results):
     plt.fill_between(d_axis, sd_f1_t_min, sd_f1_t_max, alpha=.3)
     plt.fill_between(d_axis, sd_f2_min, sd_f2_max, alpha=.3)
     
+    plt.ylabel('SDs')
+    plt.xlabel('Dimension d')
+    plt.legend()
+    
 def fig_2_f1_f2_sd(args, results):
     d_axis = np.array(args.d_vec)
     sd_ratio = np.array(results['sd_ratio'])
@@ -225,9 +239,13 @@ def fig_2_f1_f2_sd(args, results):
     sd_ratio_min = np.array(results['sd_ratio_min'])
     sd_ratio_t_list = np.array(results['sd_ratio_t_list'])
     
-    plt.semilogy(d_axis, sd_ratio, label='$F_1$ IPM')
-    plt.semilogy(d_axis, sd_ratio_t_list, label='$F_1$ IPM (theory)')
+    plt.semilogy(d_axis, sd_ratio, label='Ratio $F_1$ SD/$F_2$ SD')
+    plt.semilogy(d_axis, sd_ratio_t_list, label='Ratio lower bound (theory)')
     plt.fill_between(d_axis, sd_ratio_min, sd_ratio_max, alpha=.3)
+    
+    plt.ylabel('Ratios')
+    plt.xlabel('Dimension d')
+    plt.legend()
     
 def values_f1_f2_sliced_w(args):
     d_f1_avg = []
@@ -392,6 +410,10 @@ def fig_1_f1_f2_sliced_w(args, results):
     plt.fill_between(d_axis, max_sliced_min, max_sliced_max, alpha=.3)
     plt.fill_between(d_axis, avg_sliced_min, avg_sliced_max, alpha=.3)
     
+    plt.ylabel('Distances')
+    plt.xlabel('Dimension d')
+    plt.legend()
+    
 def fig_2_f1_f2_sliced_w(args, results):
     d_axis = np.array(args.d_vec)
     d_f1_nu_avg = np.array(results['d_f1_nu_avg'])
@@ -421,7 +443,12 @@ def fig_2_f1_f2_sliced_w(args, results):
     plt.fill_between(d_axis, max_sliced_nu_min, max_sliced_nu_max, alpha=.3)
     plt.fill_between(d_axis, avg_sliced_nu_min, avg_sliced_nu_max, alpha=.3)
     
+    plt.ylabel('Distances')
+    plt.xlabel('Dimension d')
+    plt.legend()
+    
 if __name__ == '__main__':
+    '''
     args = empty_class()
     args.name = 'f1_f2_ipm'
     args.d_vec = [6,8,10,12,14,16]
@@ -449,7 +476,7 @@ if __name__ == '__main__':
     args.n_feature_samples = 10000
     args.n_samples = 500000
     args.alpha = 1
-    args.gamma = 0.5
+    args.gamma = 1.0
     args.a = 1.0
     args.b = 0.0
     results = values_f1_f2_sd(args)
@@ -461,7 +488,7 @@ if __name__ == '__main__':
     fig_2_f1_f2_sd(args)
     plt.title(f'Ratios between $F_1$ and $F_2$ SD estimates ($k = {args.k}$)')
     plt.savefig(f'figures/f1_f2_sd_fig2_{args.k}_{args.n_samples}', bbox_inches='tight', pad_inches=0)
-    
+    '''
     args = empty_class()
     args.name = 'f1_f2_sliced_w'
     args.d_vec = [6,8,10,12,14,16]
@@ -481,5 +508,5 @@ if __name__ == '__main__':
     fig_2_f1_f2_sliced_w(args)
     plt.title(f'$F_1$ and $F_2$ IPM, sliced and max-sliced Wasserstein (baseline)')
     plt.savefig(f'figures/f1_f2_sliced_w_fig2_{args.k}_{args.n_samples}', bbox_inches='tight', pad_inches=0)
-    '''
+    
 
