@@ -186,7 +186,7 @@ if __name__ == '__main__':
         kernel_eval_X_mu_X_nu = f2_kernel_evaluation(X_mu, X_nu, a, b, fill_diag = False)
         return np.sqrt(torch.mean(kernel_eval_X_mu_X_mu) + torch.mean(kernel_eval_X_nu_X_nu) - \
                        2*torch.mean(kernel_eval_X_mu_X_nu))
-    
+    '''                   
     def d_f1_estimate_theoretical(args):
         torch.manual_seed(args.seed)
         X0 = torch.randn(args.n_samples,args.d)
@@ -199,6 +199,13 @@ if __name__ == '__main__':
         B = torch.nn.functional.relu(-X0[:,args.d-1])
         return torch.abs(2*torch.sum((args.a*A + args.b*B)*(acceptance_prob_plus-acceptance_prob_minus)))/ \
     torch.sum(acceptance_prob_plus+acceptance_prob_minus)
+    '''
+    def d_f1_estimate_theoretical(X_nu, X_mu, args):
+        A_nu = torch.nn.functional.relu(X_nu[:,args.d-1])
+        A_mu = torch.nn.functional.relu(X_mu[:,args.d-1])
+        B_nu = torch.nn.functional.relu(-X_nu[:,args.d-1])
+        B_mu = torch.nn.functional.relu(-X_mu[:,args.d-1])
+        return torch.abs(2*torch.sum(args.a*A_nu + args.b*B_nu - (args.a*A_mu + args.b*B_mu)))/ torch.sum(X_nu.shape[0]+X_mu.shape[0])
     
     def compute_distances(args, fname):
         start = time.time()
@@ -225,7 +232,7 @@ if __name__ == '__main__':
         print('D_{B_F2} estimate', float(d_f2))
         print(f'd={args.d}, k={args.k}, n_samples={args.n_samples}, n_feature_samples={args.n_feature_samples}, duration={time.time()-start}')
         start = time.time()
-        d_f1_t = d_f1_estimate_theoretical(args)
+        d_f1_t = d_f1_estimate_theoretical(X_nu, X_mu, args)
         print('D_{B_F1} theoretical estimate', float(d_f1_t))
         print(f'd={args.d}, k={args.k}, n_samples={args.n_samples}, duration={time.time()-start}')
         if args.theoretical_f2:
