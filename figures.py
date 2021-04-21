@@ -455,9 +455,9 @@ if __name__ == '__main__':
     args.d_vec = [6,8,10,12,14,16]
     args.k = 6
     args.n_feature_samples = 10000
-    args.n_samples = 50000000
+    args.n_samples = 40000000
     args.alpha = 1
-    args.gamma = 0.5
+    args.gamma = 1.0
     args.a = 1.0
     args.b = 0.0
     results = values_f1_f2_sep(args)

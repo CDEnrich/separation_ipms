@@ -38,10 +38,12 @@ def get_nu_samples(args, second_dataset=False):
             if j==0:
                 X = torch.gather(X0, 0, accepted_rows_tensor)
                 print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {X.shape[0]} more samples.')
-            elif X.shape(0) < args.effective_n_samples:
+            elif X.shape[0] < args.effective_n_samples:
                 samples = torch.gather(X0, 0, accepted_rows_tensor)
                 X = torch.cat((X,samples),0)
                 print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {samples.shape[0]} more samples.')
+            else:
+                continue
         if not os.path.exists('nu_samples'):
             os.makedirs('nu_samples')
         pickle.dump(X, open(fname, 'wb'))
@@ -71,10 +73,12 @@ def get_mu_samples(args):
             if j==0:
                 X = torch.gather(X0, 0, accepted_rows_tensor)
                 print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {X.shape[0]} more samples.')
-            elif X.shape(0) < args.effective_n_samples:
+            elif X.shape[0] < args.effective_n_samples:
                 samples = torch.gather(X0, 0, accepted_rows_tensor)
                 X = torch.cat((X,samples),0)
                 print(f'Sample batch {j+1}/{args.n_samples//1000000} done in {time.time()-start}. {samples.shape[0]} more samples.')
+            else:
+                continue
         if not os.path.exists('mu_samples'):
             os.makedirs('mu_samples')
         pickle.dump(X, open(fname, 'wb'))
@@ -103,7 +107,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_feature_samples', type=int, default=10000, help='number of feature samples')
     parser.add_argument('--seed', type=int, default=42, help='seed')
     parser.add_argument('--alpha', type=int, default=1, help='parameter of the activation function')
-    parser.add_argument('--gamma', type=float, default=0.5, help='energy multiplier')
+    parser.add_argument('--gamma', type=float, default=1.0, help='energy multiplier')
     parser.add_argument('--a', type=float, default=1.0, help='parameter of the activation function')
     parser.add_argument('--b', type=float, default=0.0, help='parameter of the activation function')
     parser.add_argument('--interactive', action='store_true', help='interactive, i.e. do not save results')
@@ -127,7 +131,7 @@ if __name__ == '__main__':
         args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]))
         return torch.max(torch.abs(gen_moment_nu_positive - gen_moment_mu_positive), 
                          torch.abs(gen_moment_nu_negative - gen_moment_mu_negative))
-    
+    '''
     def d_f2_estimate(X_nu, X_mu, args):
         torch.manual_seed(args.seed)
         Y0 = torch.randn(args.d,args.n_feature_samples)
@@ -142,6 +146,29 @@ if __name__ == '__main__':
         args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0)
         d_f2_sq = torch.mean(0.5*(gen_moment_nu_positive-gen_moment_mu_positive)**2 + \
                              0.5*(gen_moment_nu_negative-gen_moment_mu_negative)**2)
+        return torch.sqrt(d_f2_sq)
+    '''
+    def d_f2_estimate(X_nu, X_mu, args):
+        torch.manual_seed(args.seed)
+        d_f2_sq = 0
+        gen_nu_positive = torch.zeros(args.n_feature_samples)
+        gen_nu_negative = torch.zeros(args.n_feature_samples)
+        gen_mu_positive = torch.zeros(args.n_feature_samples)
+        gen_mu_negative = torch.zeros(args.n_feature_samples)
+        for j in range(X_mu.shape[0]//10000):
+            Y0 = torch.randn(args.d,args.n_feature_samples)
+            Y0 = torch.nn.functional.normalize(Y0, p=2, dim=0)
+            X_mu_s = X_mu[j*10000:(j+1)*10000,:]
+            X_nu_s = X_nu[j*10000:(j+1)*10000,:]
+            gen_nu_positive = gen_nu_positive + args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu_s,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu_s,Y0)), dim=0)
+            gen_nu_negative = gen_nu_negative + args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu_s,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu_s,Y0)), dim=0)
+            gen_mu_positive = gen_mu_positive + args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu_s,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu_s,Y0)), dim=0)
+            gen_mu_negative = gen_mu_negative + args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu_s,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu_s,Y0)), dim=0)
+        gen_nu_positive = gen_nu_positive/(X_mu.shape[0]//10000)
+        gen_nu_negative = gen_nu_negative/(X_mu.shape[0]//10000)
+        gen_mu_positive = gen_mu_positive/(X_mu.shape[0]//10000)
+        gen_mu_negative = gen_mu_negative/(X_mu.shape[0]//10000)
+        d_f2_sq = torch.mean(0.5*(gen_nu_positive-gen_mu_positive)**2 + 0.5*(gen_nu_negative-gen_mu_negative)**2)
         return torch.sqrt(d_f2_sq)
     
     def f2_kernel_evaluation(X0, X1, a, b, fill_diag = True):
