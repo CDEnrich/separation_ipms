@@ -73,13 +73,17 @@ if __name__ == '__main__':
         X_mu = torch.cat((torch.from_numpy(X_mu),ones_d), 1)
         X_nu = torch.cat((torch.from_numpy(X_nu),ones_d), 1)
         torch.manual_seed(args.seed)
-        Y0 = torch.randn(args.d+1,args.n_feature_samples)
-        Y0 = torch.nn.functional.normalize(Y0, p=2, dim=0).double()
-        gen_moment_nu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0)
-        gen_moment_nu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0)
-        gen_moment_mu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0)
-        gen_moment_mu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0)
-        d_f2_sq = torch.mean(0.5*(gen_moment_nu_positive-gen_moment_mu_positive)**2 + 0.5*(gen_moment_nu_negative-gen_moment_mu_negative)**2)
+        d_f2_sq = 0
+        for j in range(args.n_feature_samples//200):
+            Y0 = torch.randn(args.d+1,200)
+            Y0 = torch.nn.functional.normalize(Y0, p=2, dim=0).double()
+            gen_moment_nu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0)
+            gen_moment_nu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0)
+            gen_moment_mu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0)
+            gen_moment_mu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0)
+            d_f2_sq = d_f2_sq + torch.mean(0.5*(gen_moment_nu_positive-gen_moment_mu_positive)**2 + 0.5*(gen_moment_nu_negative-gen_moment_mu_negative)**2)
+            print(f'd_F2 computation batch {j+1}/{args.n_feature_samples//200}')
+        d_f2_sq = d_f2_sq/(args.n_feature_samples//200)
         return torch.sqrt(d_f2_sq)
     
     def d_tilde_f2_estimate_w(X_nu, X_mu, args):
@@ -87,15 +91,19 @@ if __name__ == '__main__':
         X_mu = torch.cat((torch.from_numpy(X_mu),ones_d), 1)
         X_nu = torch.cat((torch.from_numpy(X_nu),ones_d), 1)
         torch.manual_seed(args.seed)
-        Z0 = torch.randn(args.d,args.n_feature_samples)
-        Z0 = torch.nn.functional.normalize(Z0, p=2, dim=0).double()
-        w0 = (np.pi*torch.rand(args.n_feature_samples) - 0.5*np.pi).unsqueeze(0).double()
-        Y0 = torch.cat((torch.cos(w0)*Z0,torch.sin(w0)),0)
-        gen_moment_nu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0)
-        gen_moment_nu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0)
-        gen_moment_mu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0)
-        gen_moment_mu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0)
-        d_f2_sq = torch.mean(0.5*(gen_moment_nu_positive-gen_moment_mu_positive)**2 + 0.5*(gen_moment_nu_negative-gen_moment_mu_negative)**2)
+        d_tildef2_sq = 0
+        for j in range(args.n_feature_samples//200):
+            Z0 = torch.randn(args.d,200)
+            Z0 = torch.nn.functional.normalize(Z0, p=2, dim=0).double()
+            w0 = (np.pi*torch.rand(200) - 0.5*np.pi).unsqueeze(0).double()
+            Y0 = torch.cat((torch.cos(w0)*Z0,torch.sin(w0)),0)
+            gen_moment_nu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0)
+            gen_moment_nu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0)
+            gen_moment_mu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0)
+            gen_moment_mu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0)
+            d_tildef2_sq = d_tildef2_sq + torch.mean(0.5*(gen_moment_nu_positive-gen_moment_mu_positive)**2 + 0.5*(gen_moment_nu_negative-gen_moment_mu_negative)**2)
+            print(f'd_tildeF2 computation batch {j+1}/{args.n_feature_samples//200}')
+        d_tildef2_sq = d_tildef2_sq/(args.n_feature_samples//200)
         return torch.sqrt(d_f2_sq)
     
     def compute_distances(args, fname):
