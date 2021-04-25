@@ -56,6 +56,7 @@ def values_f1_f2_sep(args):
             d_f1_nu_list.append(res['d_f1_nu'])
             d_f2_nu_list.append(res['d_f2_nu'])
             sqrt_N_kd = res['sqrt(N_kd)']
+            print(f'Dimension: {args.d}. Effective number of samples:', res['effective_n_samples'])
         d_f1_list = torch.tensor(d_f1_list)
         d_f2_list = torch.tensor(d_f2_list)
         d_f1_t_list = torch.tensor(d_f1_t_list)
@@ -223,7 +224,7 @@ def fig_1_f1_f2_sd(args, results):
     sd_f1_t_max = np.array(results['sd_f1_t_max'])
     
     plt.semilogy(d_axis, sd_f1_avg, label='$F_1$ SD')
-    plt.semilogy(d_axis, sd_f1_t_avg, label='$F_1$ SD (theory)')
+    plt.semilogy(d_axis, sd_f1_t_avg, label='$F_1$ SD lower bound (theory)')
     plt.semilogy(d_axis, sd_f2_avg, label='$F_2$ SD')
     plt.fill_between(d_axis, sd_f1_min, sd_f1_max, alpha=.3)
     plt.fill_between(d_axis, sd_f1_t_min, sd_f1_t_max, alpha=.3)
@@ -455,7 +456,7 @@ if __name__ == '__main__':
     args.d_vec = [6,8,10,12,14,16]
     args.k = 6
     args.n_feature_samples = 10000
-    args.n_samples = 40000000
+    args.n_samples = 2200000000
     args.alpha = 1
     args.gamma = 1.0
     args.a = 1.0
@@ -467,7 +468,7 @@ if __name__ == '__main__':
     plt.savefig(f'figures/f1_f2_ipm_fig1_{args.k}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
     plt.figure(figsize=(4,3))
     fig_2_f1_f2_sep(args, results)
-    plt.title(f'Ratios between $F_1$ and $F_2$ IPM estimates ($k = {args.k}$)')
+    plt.title(f'Ratios $F_1$ IPM / $F_2$ IPM ($k = {args.k}$)')
     plt.savefig(f'figures/f1_f2_ipm_fig2_{args.k}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
     
     args = empty_class()
@@ -475,7 +476,7 @@ if __name__ == '__main__':
     args.d_vec = [6,8,10,12,14,16]
     args.k = 5
     args.n_feature_samples = 10000
-    args.n_samples = 500000
+    args.n_samples = 2000000
     args.alpha = 1
     args.gamma = 1.0
     args.a = 1.0
@@ -487,7 +488,7 @@ if __name__ == '__main__':
     plt.savefig(f'figures/f1_f2_sd_fig1_{args.k}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
     plt.figure(figsize=(4,3))
     fig_2_f1_f2_sd(args, results)
-    plt.title(f'Ratios between $F_1$ and $F_2$ SD estimates ($k = {args.k}$)')
+    plt.title(f'Ratios $F_1$ SD / $F_2$ SD ($k = {args.k}$)')
     plt.savefig(f'figures/f1_f2_sd_fig2_{args.k}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
 
     args = empty_class()
@@ -503,9 +504,9 @@ if __name__ == '__main__':
     results = values_f1_f2_sliced_w(args)
     plt.figure(figsize=(4,3))
     fig_1_f1_f2_sliced_w(args, results)
-    plt.title(f'$F_1$ and $F_2$ IPM, sliced and max-sliced Wasserstein')
+    plt.title(f'$F_1$, $F_2$ IPM vs. sliced Wasserstein')
     plt.savefig(f'figures/f1_f2_sliced_w_fig1_{args.large_var}_{args.small_var}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
     plt.figure(figsize=(4,3))
     fig_2_f1_f2_sliced_w(args, results)
-    plt.title(f'$F_1$ and $F_2$ IPM, sliced and max-sliced Wasserstein (baseline)')
+    plt.title(f'$F_1$, $F_2$ IPM vs. sliced Wasserstein')
     plt.savefig(f'figures/f1_f2_sliced_w_fig2_{args.large_var}_{args.small_var}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)

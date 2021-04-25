@@ -113,7 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--interactive', action='store_true', help='interactive, i.e. do not save results')
     parser.add_argument('--theoretical_f2', action='store_true', help='compute f2 distance with exact kernel too')
     parser.add_argument('--task_id', type=int, default=None, help='task id for sweep jobs')
-    parser.add_argument('--effective_n_samples', type=int, default=300000, help='number of samples')
+    parser.add_argument('--effective_n_samples', type=int, default=1000000, help='number of samples')
 
     args = parser.parse_args()
     
@@ -151,6 +151,21 @@ if __name__ == '__main__':
     def d_f2_estimate(X_nu, X_mu, args):
         torch.manual_seed(args.seed)
         d_f2_sq = 0
+        for j in range(args.n_feature_samples//200):
+            Y0 = torch.randn(args.d,200)
+            Y0 = torch.nn.functional.normalize(Y0, p=2, dim=0)
+            gen_moment_nu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0) +args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0)
+            gen_moment_nu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0)
+            gen_moment_mu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0) +args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0)
+            gen_moment_mu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0)
+            d_f2_sq = d_f2_sq + torch.mean(0.5*(gen_moment_nu_positive-gen_moment_mu_positive)**2 + 0.5*(gen_moment_nu_negative-gen_moment_mu_negative)**2)
+            print(f'd_F2 computation batch {j+1}/{args.n_feature_samples//200}')
+        d_f2_sq = d_f2_sq/(args.n_feature_samples//200)   
+        return torch.sqrt(d_f2_sq)
+    '''
+    def d_f2_estimate(X_nu, X_mu, args):
+        torch.manual_seed(args.seed)
+        d_f2_sq = 0
         gen_nu_positive = torch.zeros(args.n_feature_samples)
         gen_nu_negative = torch.zeros(args.n_feature_samples)
         gen_mu_positive = torch.zeros(args.n_feature_samples)
@@ -170,7 +185,7 @@ if __name__ == '__main__':
         gen_mu_negative = gen_mu_negative/(X_mu.shape[0]//10000)
         d_f2_sq = torch.mean(0.5*(gen_nu_positive-gen_mu_positive)**2 + 0.5*(gen_nu_negative-gen_mu_negative)**2)
         return torch.sqrt(d_f2_sq)
-    
+    '''
     def f2_kernel_evaluation(X0, X1, a, b, fill_diag = True):
         if fill_diag:
             inner_prod = torch.matmul(X0,X1.t()).fill_diagonal_(fill_value = 1)
@@ -205,7 +220,7 @@ if __name__ == '__main__':
         A_mu = torch.nn.functional.relu(X_mu[:,args.d-1])
         B_nu = torch.nn.functional.relu(-X_nu[:,args.d-1])
         B_mu = torch.nn.functional.relu(-X_mu[:,args.d-1])
-        return torch.abs(2*torch.sum(args.a*A_nu + args.b*B_nu - (args.a*A_mu + args.b*B_mu)))/ torch.sum(X_nu.shape[0]+X_mu.shape[0])
+        return torch.abs(2*torch.sum(args.a*A_nu + args.b*B_nu - (args.a*A_mu + args.b*B_mu)))/(X_nu.shape[0]+X_mu.shape[0])
     
     def compute_distances(args, fname):
         start = time.time()
