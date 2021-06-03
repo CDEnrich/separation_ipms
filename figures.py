@@ -223,13 +223,20 @@ def fig_1_f1_f2_sd(args, results):
     sd_f2_max = np.array(results['sd_f2_max'])
     sd_f1_t_max = np.array(results['sd_f1_t_max'])
     
-    plt.semilogy(d_axis, sd_f1_avg, label='$F_1$ SD')
-    plt.semilogy(d_axis, sd_f1_t_avg, label='$F_1$ SD lower bound (theory)')
-    plt.semilogy(d_axis, sd_f2_avg, label='$F_2$ SD')
-    plt.fill_between(d_axis, sd_f1_min, sd_f1_max, alpha=.3)
-    plt.fill_between(d_axis, sd_f1_t_min, sd_f1_t_max, alpha=.3)
-    plt.fill_between(d_axis, sd_f2_min, sd_f2_max, alpha=.3)
+    #plt.semilogy(d_axis, sd_f1_avg, label='$F_1$ SD')
+    #plt.semilogy(d_axis, sd_f1_t_avg, label='$F_1$ SD lower bound (theory)')
+    #plt.semilogy(d_axis, sd_f2_avg, label='$F_2$ SD')
+    #plt.fill_between(d_axis, sd_f1_min, sd_f1_max, alpha=.3)
+    #plt.fill_between(d_axis, sd_f1_t_min, sd_f1_t_max, alpha=.3)
+    #plt.fill_between(d_axis, sd_f2_min, sd_f2_max, alpha=.3)
     
+    plt.semilogy(d_axis, sd_f1_avg/sd_f1_t_avg, label='$F_1$ SD')
+    plt.semilogy(d_axis, sd_f1_t_avg/sd_f1_t_avg, label='$F_1$ SD lower bound (theory)')
+    plt.semilogy(d_axis, sd_f2_avg/sd_f1_t_avg, label='$F_2$ SD')
+    plt.fill_between(d_axis, sd_f1_min/sd_f1_t_avg, sd_f1_max/sd_f1_t_avg, alpha=.3)
+    plt.fill_between(d_axis, sd_f1_t_min/sd_f1_t_avg, sd_f1_t_max/sd_f1_t_avg, alpha=.3)
+    plt.fill_between(d_axis, sd_f2_min/sd_f1_t_avg, sd_f2_max/sd_f1_t_avg, alpha=.3)
+
     plt.ylabel('SDs')
     plt.xlabel('Dimension d')
     plt.legend()
@@ -400,21 +407,44 @@ def fig_1_f1_f2_sliced_w(args, results):
     d_tildef2_min = np.array(results['d_tildef2_min'])
     max_sliced_min = np.array(results['max_sliced_min'])
     avg_sliced_min = np.array(results['avg_sliced_min'])
+
+    d_axis = np.array(args.d_vec)
+    d_f1_nu_avg = np.array(results['d_f1_nu_avg'])
+    d_f2_nu_avg = np.array(results['d_f2_nu_avg'])
+    d_tildef2_nu_avg = np.array(results['d_tildef2_nu_avg'])
+    max_sliced_nu_avg = np.array(results['max_sliced_nu_avg'])
+    avg_sliced_nu_avg = np.array(results['avg_sliced_nu_avg'])
+    d_f1_nu_max = np.array(results['d_f1_nu_max'])
+    d_f2_nu_max = np.array(results['d_f2_nu_max'])
+    d_tildef2_nu_max = np.array(results['d_tildef2_nu_max'])
+    max_sliced_nu_max = np.array(results['max_sliced_nu_max'])
+    avg_sliced_nu_max = np.array(results['avg_sliced_nu_max'])
+    d_f1_nu_min = np.array(results['d_f1_nu_min'])
+    d_f2_nu_min = np.array(results['d_f2_nu_min'])
+    d_tildef2_nu_min = np.array(results['d_tildef2_nu_min'])
+    max_sliced_nu_min = np.array(results['max_sliced_nu_min'])
+    avg_sliced_nu_min = np.array(results['avg_sliced_nu_min'])
     
-    plt.semilogy(d_axis, d_f1_avg, label='$F_1$ IPM')
-    plt.semilogy(d_axis, d_f2_avg, label='$F_2$ IPM')
-    plt.semilogy(d_axis, d_tildef2_avg, label='$tilde{F}_2$ IPM')
-    plt.semilogy(d_axis, max_sliced_avg, label='Max-sliced W.')
-    plt.semilogy(d_axis, avg_sliced_avg, label='Sliced W.')
+    plt.loglog(d_axis, d_f1_avg, label='$F_1$ IPM')
+    plt.loglog(d_axis, d_f2_avg, label='$F_2$ IPM')
+    plt.loglog(d_axis, d_tildef2_avg, label='$\~F_2$ IPM')
+    plt.loglog(d_axis, max_sliced_avg, label='Max-sliced W.')
+    plt.loglog(d_axis, avg_sliced_avg, label='Sliced W.')
+    plt.loglog(d_axis, d_f2_nu_avg, label='$F_2$ IPM baseline')
+    plt.loglog(d_axis, d_tildef2_nu_avg, label='$\~F_2$ IPM baseline')
+    plt.loglog(d_axis, avg_sliced_nu_avg, label='Sliced W. baseline')
     plt.fill_between(d_axis, d_f1_min, d_f1_max, alpha=.3)
     plt.fill_between(d_axis, d_f2_min, d_f2_max, alpha=.3)
     plt.fill_between(d_axis, d_tildef2_min, d_tildef2_max, alpha=.3)
     plt.fill_between(d_axis, max_sliced_min, max_sliced_max, alpha=.3)
     plt.fill_between(d_axis, avg_sliced_min, avg_sliced_max, alpha=.3)
-    
+    plt.fill_between(d_axis, d_f2_nu_min, d_f2_nu_max, alpha=.3)
+    plt.fill_between(d_axis, d_tildef2_nu_min, d_tildef2_nu_max, alpha=.3)
+    plt.fill_between(d_axis, avg_sliced_nu_min, avg_sliced_nu_max, alpha=.3)
+
     plt.ylabel('Distances')
     plt.xlabel('Dimension d')
-    plt.legend()
+    plt.legend(fontsize=8)
     
 def fig_2_f1_f2_sliced_w(args, results):
     d_axis = np.array(args.d_vec)
@@ -434,15 +464,15 @@ def fig_2_f1_f2_sliced_w(args, results):
     max_sliced_nu_min = np.array(results['max_sliced_nu_min'])
     avg_sliced_nu_min = np.array(results['avg_sliced_nu_min'])
     
-    plt.semilogy(d_axis, d_f1_nu_avg, label='$F_1$ IPM')
-    plt.semilogy(d_axis, d_f2_nu_avg, label='$F_2$ IPM')
-    plt.semilogy(d_axis, d_tildef2_nu_avg, label='$tilde{F}_2$ IPM')
-    plt.semilogy(d_axis, max_sliced_nu_avg, label='Max-sliced W.')
-    plt.semilogy(d_axis, avg_sliced_nu_avg, label='Sliced W.')
-    plt.fill_between(d_axis, d_f1_nu_min, d_f1_nu_max, alpha=.3)
+    #plt.semilogy(d_axis, d_f1_nu_avg, label='$F_1$ IPM')
+    plt.loglog(d_axis, d_f2_nu_avg, label='$F_2$ IPM')
+    plt.loglog(d_axis, d_tildef2_nu_avg, label='$tilde{F}_2$ IPM')
+    #plt.semilogy(d_axis, max_sliced_nu_avg, label='Max-sliced W.')
+    plt.loglog(d_axis, avg_sliced_nu_avg, label='Sliced W.')
+    #plt.fill_between(d_axis, d_f1_nu_min, d_f1_nu_max, alpha=.3)
     plt.fill_between(d_axis, d_f2_nu_min, d_f2_nu_max, alpha=.3)
     plt.fill_between(d_axis, d_tildef2_nu_min, d_tildef2_nu_max, alpha=.3)
-    plt.fill_between(d_axis, max_sliced_nu_min, max_sliced_nu_max, alpha=.3)
+    #plt.fill_between(d_axis, max_sliced_nu_min, max_sliced_nu_max, alpha=.3)
     plt.fill_between(d_axis, avg_sliced_nu_min, avg_sliced_nu_max, alpha=.3)
     
     plt.ylabel('Distances')
@@ -456,7 +486,7 @@ if __name__ == '__main__':
     args.d_vec = [6,8,10,12,14,16]
     args.k = 6
     args.n_feature_samples = 10000
-    args.n_samples = 2200000000
+    args.n_samples = 4400000000
     args.alpha = 1
     args.gamma = 1.0
     args.a = 1.0
@@ -476,7 +506,7 @@ if __name__ == '__main__':
     args.d_vec = [6,8,10,12,14,16]
     args.k = 5
     args.n_feature_samples = 10000
-    args.n_samples = 2000000
+    args.n_samples = 30000000
     args.alpha = 1
     args.gamma = 1.0
     args.a = 1.0
@@ -493,7 +523,7 @@ if __name__ == '__main__':
 
     args = empty_class()
     args.name = 'f1_f2_sliced_w'
-    args.d_vec = [6,8,10,12,14,16]
+    args.d_vec = [3, 10, 30, 100, 300, 1000] #[6,8,10,12,14,16]
     args.n_feature_samples = 10000
     args.n_samples = 100000
     args.alpha = 1
@@ -508,5 +538,5 @@ if __name__ == '__main__':
     plt.savefig(f'figures/f1_f2_sliced_w_fig1_{args.large_var}_{args.small_var}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)
     plt.figure(figsize=(4,3))
     fig_2_f1_f2_sliced_w(args, results)
-    plt.title(f'$F_1$, $F_2$ IPM vs. sliced Wasserstein')
+    plt.title(f'Metrics for same distribution samples')
     plt.savefig(f'figures/f1_f2_sliced_w_fig2_{args.large_var}_{args.small_var}_{args.n_samples}.pdf', bbox_inches='tight', pad_inches=0)

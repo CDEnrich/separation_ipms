@@ -104,7 +104,7 @@ if __name__ == '__main__':
             d_tildef2_sq = d_tildef2_sq + torch.mean(0.5*(gen_moment_nu_positive-gen_moment_mu_positive)**2 + 0.5*(gen_moment_nu_negative-gen_moment_mu_negative)**2)
             print(f'd_tildeF2 computation batch {j+1}/{args.n_feature_samples//200}')
         d_tildef2_sq = d_tildef2_sq/(args.n_feature_samples//200)
-        return torch.sqrt(d_f2_sq)
+        return torch.sqrt(d_tildef2_sq)
     
     def compute_distances(args, fname):
         mu_variance = args.large_var*np.identity(args.d)
