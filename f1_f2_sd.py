@@ -53,11 +53,21 @@ if __name__ == '__main__':
     parser.add_argument('--interactive', action='store_true', help='interactive, i.e. do not save results')
     parser.add_argument('--no_sd_f2', action='store_true', help='do not compute sd_f2')
     parser.add_argument('--task_id', type=int, default=None, help='task id for sweep jobs')
+    parser.add_argument('--recompute_sd_f1_e', action='store_true', help='compute again sd_f1_e')
 
     args = parser.parse_args()
 
     if args.task_id is not None:
         set_args_for_task_id(args, args.task_id)
+    
+    def theoretical_estimate_opti(args):
+        q_k_d = ss.jacobi(args.k, (args.d-3)/2.0, (args.d-3)/2.0)
+        legendre_k_d = q_k_d/q_k_d(1)
+        q_km1_dp2 = ss.jacobi(args.k-1, (args.d-1)/2.0, (args.d-1)/2.0)
+        legendre_km1_dp2 = q_km1_dp2/q_km1_dp2(1)
+        t_values = torch.linspace(-1,1, steps=200001)
+        objective_values = -(args.d + args.alpha -2)/(args.d - 1)*t_values*torch.sqrt(1-t_values**2)*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*torch.sqrt(1-t_values**2)*legendre_k_d(t_values)
+        return torch.abs(objective_values)
     
     def sd_f1_estimate_theoretical(args):
         if (args.k%2 != (args.alpha+1)%2) and (args.k > args.alpha + 2):
@@ -135,9 +145,12 @@ if __name__ == '__main__':
     
     def sd_f1_estimate(X_mu, args):
         score_mu = score_function(X_mu)
-        mu_positive = torch.norm(args.a*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0), dim=0, p=2)
-        mu_negative = torch.norm(args.a*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0) + args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0), dim=0, p=2)
-        return torch.max(mu_positive,mu_negative)
+        #mu_positive = torch.norm(args.a*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0), dim=0, p=2)
+        #mu_negative = torch.norm(args.a*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0) + args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0), dim=0, p=2)
+        #return torch.max(mu_positive,mu_negative)
+        mu_positive = torch.abs(args.a*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]) + args.b*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]))
+        mu_negative = torch.abs(args.a*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]) + args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]))
+        return torch.sqrt(torch.max(mu_positive,mu_negative)+(args.d-1)*theoretical_estimate_opti(args))
     
     def compute_distances(args, fname):
         start = time.time()
@@ -168,7 +181,7 @@ if __name__ == '__main__':
         N_kd_inv(X_mu, args)
         if not args.no_sd_f2:
             res = {
-                'sd_f1': sd_f1,
+                'sd_f1_e': sd_f1,
                 'sd_f2': sd_f2,
                 'sd_f1_t': sd_f1_t,
                 'sd_ratio': (sd_f1+sd_f1_t)/(2*sd_f2),
@@ -182,6 +195,16 @@ if __name__ == '__main__':
             }
         if not args.interactive:
             pickle.dump(res, open(fname, 'wb'))
+            
+    def compute_empirical_f1_distance(args, fname):
+        start = time.time()
+        X_mu = get_mu_samples_sd(args)
+        print(f'X_mu samples done. Duration={time.time()-start}')
+        print(f'Size of X_mu: {X_mu.shape[0]}')
+        start = time.time()
+        sd_f1 = sd_f1_estimate(X_mu, args)
+        print('SD_{B_F1} estimate', float(sd_f1))
+        return sd_f1
         
     if args.task_id is not None or args.use_grid is not None:
         resdir = os.path.join('res', args.name)
@@ -190,7 +213,14 @@ if __name__ == '__main__':
         fname = os.path.join(resdir,f'{args.name}_{args.d}_{args.k}_{args.n_samples}_{args.n_feature_samples}_{args.seed}_{args.alpha}_{args.gamma}_{args.a}_{args.b}.pkl')
         print(f'Output:{fname}')
         if os.path.exists(fname) and not args.interactive:
-            print('results file already exists, skipping')
+            res = pickle.load(open(fname, 'rb'))
+            if args.recompute_sd_f1_e or not 'sd_f1_e' in res.keys():
+                empirical_f1_distance = compute_empirical_f1_distance(args, fname)
+                print('empirical SD_{B_F1} distance computed')
+                res['sd_f1_e'] = empirical_f1_distance
+                pickle.dump(res, open(fname, 'wb'))
+            else:
+                print('results file already exists, skipping')
             sys.exit(0)
         compute_distances(args, fname)
     else:
@@ -203,7 +233,14 @@ if __name__ == '__main__':
             fname = os.path.join(resdir,f'{args.name}_{args.d}_{args.k}_{args.n_samples}_{args.n_feature_samples}_{args.seed}_{args.alpha}_{args.gamma}_{args.a}_{args.b}.pkl')
             print(f'Output:{fname}')
             if os.path.exists(fname) and not args.interactive:
-                print(f'results file already exists, skipping')
+                res = pickle.load(open(fname, 'rb'))
+                if args.recompute_sd_f1_e or not 'sd_f1_e' in res.keys():
+                    empirical_f1_distance = compute_empirical_f1_distance(args, fname)
+                    print('empirical SD_{B_F1} distance computed')
+                    res['sd_f1_e'] = empirical_f1_distance
+                    pickle.dump(res, open(fname, 'wb'))
+                else:
+                    print(f'results file already exists, skipping')
                 continue
             print(f'Dimension {i+1}/{args.d}')
             compute_distances(args, fname)
