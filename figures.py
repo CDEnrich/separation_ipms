@@ -174,7 +174,7 @@ def values_f1_f2_sd(args):
         assert len(fnames) > 0, 'no files! ({})'.format(name)
         for fname in fnames:
             res = pickle.load(open(fname, 'rb'))
-            sd_f1_list.append(res['sd_f1'])
+            sd_f1_list.append(res['sd_f1_e'])
             sd_f2_list.append(res['sd_f2'])
             sd_f1_t_list.append(res['sd_f1_t'])
             sd_ratio_t = res['sd_ratio_t']
