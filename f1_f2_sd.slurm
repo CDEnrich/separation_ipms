@@ -13,6 +13,6 @@ singularity exec --overlay /scratch/cd2754/overlay-50G-10M.ext3:ro /scratch/work
 source /ext3/miniconda3/etc/profile.d/conda.sh
 conda activate
 
-python ./f1_f2_sd.py --task_id $SLURM_ARRAY_TASK_ID --n_samples 30000000
+python ./f1_f2_sd.py --task_id $SLURM_ARRAY_TASK_ID --n_samples 30000000 --recompute_sd_f1_e
 "
 

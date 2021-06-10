@@ -66,7 +66,7 @@ if __name__ == '__main__':
         q_km1_dp2 = ss.jacobi(args.k-1, (args.d-1)/2.0, (args.d-1)/2.0)
         legendre_km1_dp2 = q_km1_dp2/q_km1_dp2(1)
         t_values = torch.linspace(-1,1, steps=200001)
-        objective_values = -(args.d + args.alpha -2)/(args.d - 1)*t_values*torch.sqrt(1-t_values**2)*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*torch.sqrt(1-t_values**2)*legendre_k_d(t_values)
+        objective_values = -(args.d + args.alpha -2)*(args.k + args.d - 2)/(args.d - 1)*t_values*torch.sqrt(1-t_values**2)*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*torch.sqrt(1-t_values**2)*legendre_k_d(t_values)
         lambda_alpha_p1_k_d = math.gamma(args.d/2)*math.factorial(args.alpha + 1)*math.gamma((args.d-1)/2)* \
                             math.gamma(args.k - args.alpha - 1)/(np.sqrt(np.pi)*math.gamma((args.d-1)/2)*(2**args.k)*math.gamma((args.k - args.alpha)/2) *math.gamma((args.k + args.d + args.alpha + 1)/2))
         return args.k/(args.alpha + 1)*lambda_alpha_p1_k_d*torch.max(torch.abs(objective_values))
@@ -77,7 +77,7 @@ if __name__ == '__main__':
         q_km1_dp2 = ss.jacobi(args.k-1, (args.d-1)/2.0, (args.d-1)/2.0)
         legendre_km1_dp2 = q_km1_dp2/q_km1_dp2(1)
         t_values = torch.linspace(-1,1, steps=200001)
-        objective_values = (args.d + args.alpha -2)/(args.d - 1)*(1-t_values*torch.sqrt(1-t_values**2))*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*torch.sqrt(1-t_values**2)*legendre_k_d(t_values)
+        objective_values = (args.d + args.alpha -2)*(args.k + args.d - 2)/(args.d - 1)*(1-t_values**2)*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*t_values*legendre_k_d(t_values)
         lambda_alpha_p1_k_d = math.gamma(args.d/2)*math.factorial(args.alpha + 1)*math.gamma((args.d-1)/2)* \
                             math.gamma(args.k - args.alpha - 1)/(np.sqrt(np.pi)*math.gamma((args.d-1)/2)*(2**args.k)*math.gamma((args.k - args.alpha)/2) *math.gamma((args.k + args.d + args.alpha + 1)/2))
         return args.k/(args.alpha + 1)*lambda_alpha_p1_k_d*torch.max(torch.abs(objective_values))
