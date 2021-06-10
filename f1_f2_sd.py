@@ -71,6 +71,17 @@ if __name__ == '__main__':
                             math.gamma(args.k - args.alpha - 1)/(np.sqrt(np.pi)*math.gamma((args.d-1)/2)*(2**args.k)*math.gamma((args.k - args.alpha)/2) *math.gamma((args.k + args.d + args.alpha + 1)/2))
         return args.k/(args.alpha + 1)*lambda_alpha_p1_k_d*torch.max(torch.abs(objective_values))
     
+    def theoretical_estimate_opti_d(args):
+        q_k_d = ss.jacobi(args.k, (args.d-3)/2.0, (args.d-3)/2.0)
+        legendre_k_d = q_k_d/q_k_d(1)
+        q_km1_dp2 = ss.jacobi(args.k-1, (args.d-1)/2.0, (args.d-1)/2.0)
+        legendre_km1_dp2 = q_km1_dp2/q_km1_dp2(1)
+        t_values = torch.linspace(-1,1, steps=200001)
+        objective_values = (args.d + args.alpha -2)/(args.d - 1)*(1-t_values*torch.sqrt(1-t_values**2))*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*torch.sqrt(1-t_values**2)*legendre_k_d(t_values)
+        lambda_alpha_p1_k_d = math.gamma(args.d/2)*math.factorial(args.alpha + 1)*math.gamma((args.d-1)/2)* \
+                            math.gamma(args.k - args.alpha - 1)/(np.sqrt(np.pi)*math.gamma((args.d-1)/2)*(2**args.k)*math.gamma((args.k - args.alpha)/2) *math.gamma((args.k + args.d + args.alpha + 1)/2))
+        return args.k/(args.alpha + 1)*lambda_alpha_p1_k_d*torch.max(torch.abs(objective_values))
+    
     def sd_f1_estimate_theoretical(args):
         if (args.k%2 != (args.alpha+1)%2) and (args.k > args.alpha + 2):
             lambda_alpha_p1_k_d = math.gamma(args.d/2)*math.factorial(args.alpha + 1)*math.gamma((args.d-1)/2)* \
@@ -150,10 +161,12 @@ if __name__ == '__main__':
         #mu_positive = torch.norm(args.a*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0), dim=0, p=2)
         #mu_negative = torch.norm(args.a*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0) + args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0), dim=0, p=2)
         #return torch.max(mu_positive,mu_negative)
-        mu_positive = torch.abs(args.a*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]) + args.b*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]))
-        mu_negative = torch.abs(args.a*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]) + args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]))
-        print('d component', torch.max(mu_positive,mu_negative), 'first components', theoretical_estimate_opti(args))
-        return torch.sqrt(torch.max(mu_positive,mu_negative)**2+(args.d-1)*theoretical_estimate_opti(args)**2)
+        #mu_positive = torch.abs(args.a*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]) + args.b*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]))
+        #mu_negative = torch.abs(args.a*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]) + args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]))
+        #print('d component', torch.max(mu_positive,mu_negative), 'first components', theoretical_estimate_opti(args))
+        #return torch.sqrt(torch.max(mu_positive,mu_negative)**2+(args.d-1)*theoretical_estimate_opti(args)**2)
+        print('d component', theoretical_estimate_opti_d(args), 'first components', theoretical_estimate_opti(args))
+        return torch.sqrt(theoretical_estimate_opti_d(args)**2+(args.d-1)*theoretical_estimate_opti(args)**2)
     
     def compute_distances(args, fname):
         start = time.time()
