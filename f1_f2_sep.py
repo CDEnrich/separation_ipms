@@ -131,23 +131,7 @@ if __name__ == '__main__':
         args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]))
         return torch.max(torch.abs(gen_moment_nu_positive - gen_moment_mu_positive), 
                          torch.abs(gen_moment_nu_negative - gen_moment_mu_negative))
-    '''
-    def d_f2_estimate(X_nu, X_mu, args):
-        torch.manual_seed(args.seed)
-        Y0 = torch.randn(args.d,args.n_feature_samples)
-        Y0 = torch.nn.functional.normalize(Y0, p=2, dim=0)
-        gen_moment_nu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0) + \
-        args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0)
-        gen_moment_nu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu,Y0)), dim=0) + \
-        args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu,Y0)), dim=0)
-        gen_moment_mu_positive = args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0) + \
-        args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0)
-        gen_moment_mu_negative = args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu,Y0)), dim=0) + \
-        args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu,Y0)), dim=0)
-        d_f2_sq = torch.mean(0.5*(gen_moment_nu_positive-gen_moment_mu_positive)**2 + \
-                             0.5*(gen_moment_nu_negative-gen_moment_mu_negative)**2)
-        return torch.sqrt(d_f2_sq)
-    '''
+    
     def d_f2_estimate(X_nu, X_mu, args):
         torch.manual_seed(args.seed)
         d_f2_sq = 0
@@ -162,30 +146,7 @@ if __name__ == '__main__':
             print(f'd_F2 computation batch {j+1}/{args.n_feature_samples//200}')
         d_f2_sq = d_f2_sq/(args.n_feature_samples//200)   
         return torch.sqrt(d_f2_sq)
-    '''
-    def d_f2_estimate(X_nu, X_mu, args):
-        torch.manual_seed(args.seed)
-        d_f2_sq = 0
-        gen_nu_positive = torch.zeros(args.n_feature_samples)
-        gen_nu_negative = torch.zeros(args.n_feature_samples)
-        gen_mu_positive = torch.zeros(args.n_feature_samples)
-        gen_mu_negative = torch.zeros(args.n_feature_samples)
-        for j in range(X_mu.shape[0]//10000):
-            Y0 = torch.randn(args.d,args.n_feature_samples)
-            Y0 = torch.nn.functional.normalize(Y0, p=2, dim=0)
-            X_mu_s = X_mu[j*10000:(j+1)*10000,:]
-            X_nu_s = X_nu[j*10000:(j+1)*10000,:]
-            gen_nu_positive = gen_nu_positive + args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu_s,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu_s,Y0)), dim=0)
-            gen_nu_negative = gen_nu_negative + args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_nu_s,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_nu_s,Y0)), dim=0)
-            gen_mu_positive = gen_mu_positive + args.a*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu_s,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu_s,Y0)), dim=0)
-            gen_mu_negative = gen_mu_negative + args.a*torch.mean(torch.nn.functional.relu(-torch.matmul(X_mu_s,Y0)), dim=0) + args.b*torch.mean(torch.nn.functional.relu(torch.matmul(X_mu_s,Y0)), dim=0)
-        gen_nu_positive = gen_nu_positive/(X_mu.shape[0]//10000)
-        gen_nu_negative = gen_nu_negative/(X_mu.shape[0]//10000)
-        gen_mu_positive = gen_mu_positive/(X_mu.shape[0]//10000)
-        gen_mu_negative = gen_mu_negative/(X_mu.shape[0]//10000)
-        d_f2_sq = torch.mean(0.5*(gen_nu_positive-gen_mu_positive)**2 + 0.5*(gen_nu_negative-gen_mu_negative)**2)
-        return torch.sqrt(d_f2_sq)
-    '''
+    
     def f2_kernel_evaluation(X0, X1, a, b, fill_diag = True):
         if fill_diag:
             inner_prod = torch.matmul(X0,X1.t()).fill_diagonal_(fill_value = 1)
@@ -201,20 +162,7 @@ if __name__ == '__main__':
         kernel_eval_X_mu_X_nu = f2_kernel_evaluation(X_mu, X_nu, a, b, fill_diag = False)
         return np.sqrt(torch.mean(kernel_eval_X_mu_X_mu) + torch.mean(kernel_eval_X_nu_X_nu) - \
                        2*torch.mean(kernel_eval_X_mu_X_nu))
-    '''                   
-    def d_f1_estimate_theoretical(args):
-        torch.manual_seed(args.seed)
-        X0 = torch.randn(args.n_samples,args.d)
-        X0 = torch.nn.functional.normalize(X0, p=2, dim=1)
-        q_k_d = ss.jacobi(args.k, (args.d-3)/2.0, (args.d-3)/2.0)
-        legendre_k_d = q_k_d/q_k_d(1)
-        acceptance_prob_plus = torch.nn.functional.relu(torch.from_numpy(0.99*legendre_k_d(X0[:,args.d-1])))
-        acceptance_prob_minus = torch.nn.functional.relu(torch.from_numpy(-0.99*legendre_k_d(X0[:,args.d-1])))
-        A = torch.nn.functional.relu(X0[:,args.d-1])
-        B = torch.nn.functional.relu(-X0[:,args.d-1])
-        return torch.abs(2*torch.sum((args.a*A + args.b*B)*(acceptance_prob_plus-acceptance_prob_minus)))/ \
-    torch.sum(acceptance_prob_plus+acceptance_prob_minus)
-    '''
+   
     def d_f1_estimate_theoretical(X_nu, X_mu, args):
         A_nu = torch.nn.functional.relu(X_nu[:,args.d-1])
         A_mu = torch.nn.functional.relu(X_mu[:,args.d-1])

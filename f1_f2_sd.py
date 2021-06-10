@@ -60,28 +60,6 @@ if __name__ == '__main__':
     if args.task_id is not None:
         set_args_for_task_id(args, args.task_id)
     
-    def theoretical_estimate_opti(args):
-        q_k_d = ss.jacobi(args.k, (args.d-3)/2.0, (args.d-3)/2.0)
-        legendre_k_d = q_k_d/q_k_d(1)
-        q_km1_dp2 = ss.jacobi(args.k-1, (args.d-1)/2.0, (args.d-1)/2.0)
-        legendre_km1_dp2 = q_km1_dp2/q_km1_dp2(1)
-        t_values = torch.linspace(-1,1, steps=200001)
-        objective_values = -(args.d + args.alpha -2)*(args.k + args.d - 2)/(args.d - 1)*t_values*torch.sqrt(1-t_values**2)*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*torch.sqrt(1-t_values**2)*legendre_k_d(t_values)
-        lambda_alpha_p1_k_d = math.gamma(args.d/2)*math.factorial(args.alpha + 1)*math.gamma((args.d-1)/2)* \
-                            math.gamma(args.k - args.alpha - 1)/(np.sqrt(np.pi)*math.gamma((args.d-1)/2)*(2**args.k)*math.gamma((args.k - args.alpha)/2) *math.gamma((args.k + args.d + args.alpha + 1)/2))
-        return args.k/(args.alpha + 1)*lambda_alpha_p1_k_d*torch.max(torch.abs(objective_values))
-    
-    def theoretical_estimate_opti_d(args):
-        q_k_d = ss.jacobi(args.k, (args.d-3)/2.0, (args.d-3)/2.0)
-        legendre_k_d = q_k_d/q_k_d(1)
-        q_km1_dp2 = ss.jacobi(args.k-1, (args.d-1)/2.0, (args.d-1)/2.0)
-        legendre_km1_dp2 = q_km1_dp2/q_km1_dp2(1)
-        t_values = torch.linspace(-1,1, steps=200001)
-        objective_values = (args.d + args.alpha -2)*(args.k + args.d - 2)/(args.d - 1)*(1-t_values**2)*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*t_values*legendre_k_d(t_values)
-        lambda_alpha_p1_k_d = math.gamma(args.d/2)*math.factorial(args.alpha + 1)*math.gamma((args.d-1)/2)* \
-                            math.gamma(args.k - args.alpha - 1)/(np.sqrt(np.pi)*math.gamma((args.d-1)/2)*(2**args.k)*math.gamma((args.k - args.alpha)/2) *math.gamma((args.k + args.d + args.alpha + 1)/2))
-        return args.k/(args.alpha + 1)*lambda_alpha_p1_k_d*torch.max(torch.abs(objective_values))
-    
     def sd_f1_estimate_theoretical(args):
         if (args.k%2 != (args.alpha+1)%2) and (args.k > args.alpha + 2):
             lambda_alpha_p1_k_d = math.gamma(args.d/2)*math.factorial(args.alpha + 1)*math.gamma((args.d-1)/2)* \
@@ -89,7 +67,6 @@ if __name__ == '__main__':
         else:
             lambda_alpha_p1_k_d = 0
         result = args.gamma*lambda_alpha_p1_k_d*args.k*(args.d+args.k-3)/(args.alpha+1)
-        #result = args.gamma*lambda_alpha_p1_k_d*args.k*(args.k-args.alpha-1)/(args.alpha+1)
         return result
     
     def lambda_alpha_p1_k_d(X_mu,args):
@@ -105,7 +82,6 @@ if __name__ == '__main__':
         lambda_alpha_kp1_d_empirical = torch.mean(torch.from_numpy(legendre_kp1_d(X_mu[:,args.d-1]))*torch.nn.functional.relu(X_mu[:,args.d-1]))
         print(f'Theoretical lambda alphap1: {lambda_alpha_p1_k_d}. Empirical lambda alphap1: {lambda_alpha_p1_k_d_empirical}')
         print(f'Theoretical lambda alphap1: {lambda_alpha_kp1_d}. Empirical lambda alphap1: {lambda_alpha_kp1_d_empirical}')
-        #return torch.mean(legendre_k_d[:,args.d-1]*torch.nn.functional.relu(X_mu[:,args.d-1])**2)
     
     def sd_ratio_lower_bound_theoretical(args):
         N_kd = (2*args.k + args.d - 2) * math.factorial(args.k + args.d - 3) / (math.factorial(args.k) * math.factorial(args.d -2))
@@ -120,7 +96,6 @@ if __name__ == '__main__':
         legendre_km1_dp2 = q_km1_dp2/q_km1_dp2(1)
         e_d = torch.zeros(1,args.d)
         e_d[0,args.d-1] = 1
-        #print(torch.from_numpy(legendre_km1_dp2(X[:,args.d-1])).shape,e_d.repeat(args.n_samples,1).shape)
         result = args.gamma*derivative_factor*torch.from_numpy(legendre_km1_dp2(X[:,args.d-1])).unsqueeze(1)*e_d.repeat(n_samples,1)
         result = result - torch.sum((X.squeeze(0)*result), dim=1).unsqueeze(1)*X.squeeze(0)
         return result
@@ -156,16 +131,29 @@ if __name__ == '__main__':
         d_f2_sq = torch.mean(0.5*torch.norm(mu_positive, dim=1, p=2)**2 + 0.5*torch.norm(mu_negative, dim=1, p=2)**2)
         return torch.sqrt(d_f2_sq)
     
+    def theoretical_estimate_opti(args):
+        q_k_d = ss.jacobi(args.k, (args.d-3)/2.0, (args.d-3)/2.0)
+        legendre_k_d = q_k_d/q_k_d(1)
+        q_km1_dp2 = ss.jacobi(args.k-1, (args.d-1)/2.0, (args.d-1)/2.0)
+        legendre_km1_dp2 = q_km1_dp2/q_km1_dp2(1)
+        t_values = torch.linspace(-1,1, steps=200001)
+        objective_values = -(args.d + args.alpha -2)*(args.k + args.d - 2)/(args.d - 1)*t_values*torch.sqrt(1-t_values**2)*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*torch.sqrt(1-t_values**2)*legendre_k_d(t_values)
+        lambda_alpha_p1_k_d = math.gamma(args.d/2)*math.factorial(args.alpha + 1)*math.gamma((args.d-1)/2)* \
+                            math.gamma(args.k - args.alpha - 1)/(np.sqrt(np.pi)*math.gamma((args.d-1)/2)*(2**args.k)*math.gamma((args.k - args.alpha)/2) *math.gamma((args.k + args.d + args.alpha + 1)/2))
+        return args.k/(args.alpha + 1)*lambda_alpha_p1_k_d*torch.max(torch.abs(objective_values))
+    
+    def theoretical_estimate_opti_d(args):
+        q_k_d = ss.jacobi(args.k, (args.d-3)/2.0, (args.d-3)/2.0)
+        legendre_k_d = q_k_d/q_k_d(1)
+        q_km1_dp2 = ss.jacobi(args.k-1, (args.d-1)/2.0, (args.d-1)/2.0)
+        legendre_km1_dp2 = q_km1_dp2/q_km1_dp2(1)
+        t_values = torch.linspace(-1,1, steps=200001)
+        objective_values = (args.d + args.alpha -2)*(args.k + args.d - 2)/(args.d - 1)*(1-t_values**2)*legendre_km1_dp2(t_values) + (args.d + args.k - 3)*t_values*legendre_k_d(t_values)
+        lambda_alpha_p1_k_d = math.gamma(args.d/2)*math.factorial(args.alpha + 1)*math.gamma((args.d-1)/2)* \
+                            math.gamma(args.k - args.alpha - 1)/(np.sqrt(np.pi)*math.gamma((args.d-1)/2)*(2**args.k)*math.gamma((args.k - args.alpha)/2) *math.gamma((args.k + args.d + args.alpha + 1)/2))
+        return args.k/(args.alpha + 1)*lambda_alpha_p1_k_d*torch.max(torch.abs(objective_values))
+    
     def sd_f1_estimate(X_mu, args):
-        score_mu = score_function(X_mu)
-        #mu_positive = torch.norm(args.a*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0) + args.b*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0), dim=0, p=2)
-        #mu_negative = torch.norm(args.a*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0) + args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1]).unsqueeze(1)*score_function(X_mu), dim=0), dim=0, p=2)
-        #return torch.max(mu_positive,mu_negative)
-        #mu_positive = torch.abs(args.a*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]) + args.b*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]))
-        #mu_negative = torch.abs(args.a*torch.mean(torch.nn.functional.relu(-X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]) + args.b*torch.mean(torch.nn.functional.relu(X_mu[:,args.d-1])*score_function(X_mu)[:,args.d-1]))
-        #print('d component', torch.max(mu_positive,mu_negative), 'first components', theoretical_estimate_opti(args))
-        #return torch.sqrt(torch.max(mu_positive,mu_negative)**2+(args.d-1)*theoretical_estimate_opti(args)**2)
-        print('d component', theoretical_estimate_opti_d(args), 'first components', theoretical_estimate_opti(args))
         return torch.sqrt(theoretical_estimate_opti_d(args)**2+(args.d-1)*theoretical_estimate_opti(args)**2)
     
     def compute_distances(args, fname):
@@ -211,17 +199,6 @@ if __name__ == '__main__':
             }
         if not args.interactive:
             pickle.dump(res, open(fname, 'wb'))
-            
-    def compute_empirical_f1_distance(args, fname):
-        start = time.time()
-        X_mu = get_mu_samples_sd(args)
-        print(f'X_mu samples done. Duration={time.time()-start}')
-        print(f'Size of X_mu: {X_mu.shape[0]}')
-        start = time.time()
-        sd_f1 = sd_f1_estimate(X_mu, args)
-        print('SD_{B_F1} estimate')
-        print(sd_f1)
-        return sd_f1
         
     if args.task_id is not None or args.use_grid is not None:
         resdir = os.path.join('res', args.name)
@@ -230,15 +207,7 @@ if __name__ == '__main__':
         fname = os.path.join(resdir,f'{args.name}_{args.d}_{args.k}_{args.n_samples}_{args.n_feature_samples}_{args.seed}_{args.alpha}_{args.gamma}_{args.a}_{args.b}.pkl')
         print(f'Output:{fname}')
         if os.path.exists(fname) and not args.interactive:
-            res = pickle.load(open(fname, 'rb'))
-            if args.recompute_sd_f1_e or not 'sd_f1_e' in res.keys():
-                empirical_f1_distance = compute_empirical_f1_distance(args, fname)
-                print('empirical SD_{B_F1} distance computed')
-                res['sd_f1_e'] = empirical_f1_distance
-                res['sd_ratio'] = empirical_f1_distance/res['sd_f2']
-                pickle.dump(res, open(fname, 'wb'))
-            else:
-                print('results file already exists, skipping')
+            print('results file already exists, skipping')
             sys.exit(0)
         compute_distances(args, fname)
     else:
@@ -251,14 +220,7 @@ if __name__ == '__main__':
             fname = os.path.join(resdir,f'{args.name}_{args.d}_{args.k}_{args.n_samples}_{args.n_feature_samples}_{args.seed}_{args.alpha}_{args.gamma}_{args.a}_{args.b}.pkl')
             print(f'Output:{fname}')
             if os.path.exists(fname) and not args.interactive:
-                res = pickle.load(open(fname, 'rb'))
-                if args.recompute_sd_f1_e or not 'sd_f1_e' in res.keys():
-                    empirical_f1_distance = compute_empirical_f1_distance(args, fname)
-                    print('empirical SD_{B_F1} distance computed')
-                    res['sd_f1_e'] = empirical_f1_distance
-                    pickle.dump(res, open(fname, 'wb'))
-                else:
-                    print(f'results file already exists, skipping')
+                print(f'results file already exists, skipping')
                 continue
             print(f'Dimension {i+1}/{args.d}')
             compute_distances(args, fname)

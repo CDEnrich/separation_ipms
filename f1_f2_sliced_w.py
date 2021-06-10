@@ -11,7 +11,6 @@ import scipy.stats as sst
 
 def set_args_for_task_id(args, task_id):
     grid = {
-        #'d': [6, 8, 10, 12, 14, 16],
         'd': [3, 10, 30, 100, 300, 1000],
         'seed': [42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
     }
